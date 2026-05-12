@@ -1,12 +1,569 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Akshat Paul — Self-Healing Web Fleet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Permanent+Marker&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --white: #f5f0e8;
+      --yellow: #ffe93d;
+      --red: #ff2e2e;
+      --blue: #1a1aff;
+      --green: #00ff88;
+      --pink: #ff69b4;
+      --border: 3px solid #0a0a0a;
+      --shadow: 6px 6px 0px #0a0a0a;
+      --shadow-big: 10px 10px 0px #0a0a0a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--white);
+      color: var(--black);
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* NOISE OVERLAY */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.5;
+    }
+
+    /* SCROLLING TICKER */
+    .ticker-wrap {
+      background: var(--yellow);
+      border-top: var(--border);
+      border-bottom: var(--border);
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 10px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .ticker {
+      display: inline-block;
+      animation: ticker 20s linear infinite;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+      color: var(--black);
+    }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* MAIN GRID */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-auto-rows: auto;
+      gap: 0;
+      padding: 0;
+    }
+
+    /* HERO BLOCK */
+    .hero {
+      grid-column: 1 / 9;
+      background: var(--blue);
+      color: var(--white);
+      border-right: var(--border);
+      border-bottom: var(--border);
+      padding: 60px 50px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '!!';
+      position: absolute;
+      bottom: -20px;
+      right: 20px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 200px;
+      color: rgba(255,255,255,0.06);
+      line-height: 1;
+      pointer-events: none;
+    }
+    .hero-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      background: var(--yellow);
+      color: var(--black);
+      display: inline-block;
+      padding: 4px 10px;
+      border: var(--border);
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 7vw, 7rem);
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--yellow); }
+    .hero-sub {
+      font-size: 0.85rem;
+      opacity: 0.75;
+      border-top: 1px solid rgba(255,255,255,0.3);
+      padding-top: 16px;
+      margin-top: 20px;
+    }
+
+    /* NAME BLOCK */
+    .name-block {
+      grid-column: 9 / 13;
+      background: var(--red);
+      color: var(--white);
+      border-bottom: var(--border);
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .name-block .label {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+    .name-block .big-name {
+      font-family: 'Permanent Marker', cursive;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      line-height: 1.1;
+      transform: rotate(-2deg);
+      display: inline-block;
+      margin: 12px 0;
+    }
+    .name-block .id-badge {
+      background: var(--black);
+      color: var(--yellow);
+      border: 2px solid var(--yellow);
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-family: 'Space Mono', monospace;
+      display: inline-block;
+      letter-spacing: 0.1em;
+      box-shadow: 4px 4px 0 var(--yellow);
+    }
+    .version-badge {
+      margin-top: 16px;
+      background: var(--yellow);
+      color: var(--black);
+      padding: 8px 14px;
+      border: var(--border);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.1em;
+      display: inline-block;
+      box-shadow: var(--shadow);
+    }
+
+    /* JOKE SECTION HEADER */
+    .section-header {
+      grid-column: 1 / 13;
+      background: var(--black);
+      color: var(--yellow);
+      padding: 20px 50px;
+      border-bottom: var(--border);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .section-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+    }
+    .section-header .pill {
+      background: var(--red);
+      color: white;
+      padding: 4px 14px;
+      border-radius: 0;
+      border: 2px solid var(--red);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* JOKE CARDS */
+    .joke-card {
+      padding: 36px 32px;
+      border-right: var(--border);
+      border-bottom: var(--border);
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+    }
+    .joke-card:hover {
+      transform: translate(-4px, -4px);
+      box-shadow: 8px 8px 0 var(--black);
+      z-index: 10;
+    }
+    .joke-card:nth-child(1) { grid-column: 1/5; background: var(--yellow); }
+    .joke-card:nth-child(2) { grid-column: 5/9; background: var(--green); }
+    .joke-card:nth-child(3) { grid-column: 9/13; background: var(--pink); }
+    .joke-card:nth-child(4) { grid-column: 1/5; background: var(--white); border-top: none; }
+    .joke-card:nth-child(5) { grid-column: 5/9; background: var(--blue); color: white; border-top: none; }
+    .joke-card:nth-child(6) { grid-column: 9/13; background: var(--red); color: white; border-top: none; }
+
+    .joke-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 5rem;
+      line-height: 1;
+      opacity: 0.12;
+      position: absolute;
+      top: 10px;
+      right: 16px;
+    }
+    .joke-setup {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.6;
+      margin-bottom: 10px;
+    }
+    .joke-text {
+      font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+      line-height: 1.55;
+      font-style: italic;
+    }
+    .joke-punchline {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 2px solid currentColor;
+      font-weight: 700;
+      font-size: clamp(0.85rem, 1.1vw, 1rem);
+      opacity: 0.8;
+    }
+    .joke-emoji {
+      font-size: 2rem;
+      display: block;
+      margin-top: 10px;
+    }
+
+    /* RANDOM JOKE GENERATOR */
+    .generator-section {
+      grid-column: 1 / 8;
+      background: var(--black);
+      color: var(--white);
+      padding: 50px;
+      border-right: var(--border);
+      border-bottom: var(--border);
+      position: relative;
+    }
+    .generator-section h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      color: var(--yellow);
+      margin-bottom: 24px;
+      letter-spacing: 0.05em;
+    }
+    #live-joke {
+      font-size: 1rem;
+      line-height: 1.7;
+      min-height: 80px;
+      padding: 20px;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.15);
+      margin-bottom: 24px;
+      font-style: italic;
+      transition: opacity 0.3s;
+    }
+    .btn {
+      background: var(--yellow);
+      color: var(--black);
+      border: var(--border);
+      padding: 14px 28px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.1s, box-shadow 0.1s;
+      display: inline-block;
+    }
+    .btn:hover { transform: translate(-2px,-2px); box-shadow: var(--shadow-big); }
+    .btn:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 var(--black); }
+
+    /* STATS PANEL */
+    .stats-panel {
+      grid-column: 8 / 13;
+      background: var(--white);
+      border-bottom: var(--border);
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .stats-panel h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 0.05em;
+      border-bottom: var(--border);
+      padding-bottom: 12px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed rgba(0,0,0,0.2);
+      padding-bottom: 10px;
+      font-size: 0.8rem;
+    }
+    .stat-row .stat-label { text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; }
+    .stat-row .stat-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+    .stat-row:nth-child(2) .stat-val { color: var(--blue); }
+    .stat-row:nth-child(3) .stat-val { color: var(--red); }
+    .stat-row:nth-child(4) .stat-val { color: var(--green); }
+    .stat-row:nth-child(5) .stat-val { color: #ff6600; }
+
+    /* MARQUEE FOOTER */
+    .footer-marquee {
+      grid-column: 1 / 13;
+      background: var(--red);
+      color: var(--white);
+      border-top: var(--border);
+      overflow: hidden;
+      padding: 14px 0;
+    }
+    .footer-marquee .ticker {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+      animation: ticker 30s linear infinite;
+    }
+
+    /* FLOATING DECO */
+    .deco-star {
+      position: fixed;
+      font-size: 3rem;
+      pointer-events: none;
+      animation: spin 8s linear infinite;
+      opacity: 0.15;
+    }
+    .deco-star:nth-of-type(1) { top: 10%; right: 5%; animation-duration: 10s; }
+    .deco-star:nth-of-type(2) { bottom: 15%; left: 3%; animation-duration: 14s; animation-direction: reverse; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .hero, .name-block, .joke-card, .generator-section, .stats-panel, .section-header { grid-column: 1 / 13; }
+      .joke-card:nth-child(4), .joke-card:nth-child(5), .joke-card:nth-child(6) { border-top: var(--border); }
+    }
+  </style>
 </head>
 <body>
-    <h1>this is a practical for the pep class</h1>
-    <p>this part is deployed through ci cd pipeline</p>
+
+  <div class="deco-star">★</div>
+  <div class="deco-star">✦</div>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap">
+    <span class="ticker">
+      ★ SELF-HEALING WEB FLEET ★ AKSHAT PAUL ★ VERSION 1.0 ★ JOKES SERVED FRESH ★ NO BUGS ONLY FEATURES ★ CSS IS NOT BROKEN (PROBABLY) ★ SELF-HEALING WEB FLEET ★ AKSHAT PAUL ★ VERSION 1.0 ★ JOKES SERVED FRESH ★ NO BUGS ONLY FEATURES ★ CSS IS NOT BROKEN (PROBABLY) ★&nbsp;
+    </span>
+  </div>
+
+  <div class="grid">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-label">⚡ Live &amp; Self-Healing</div>
+      <h1>THE<br/><span>SELF-</span><br/>HEALING<br/>WEB FLEET</h1>
+      <div class="hero-sub">
+        A brutalist monument to uptime, bad jokes, and staying online at all costs.<br/>
+        Built with zero regrets and maximum border radius: <strong>0px</strong>.
+      </div>
+    </div>
+
+    <!-- NAME -->
+    <div class="name-block">
+      <div>
+        <div class="label">Developer</div>
+        <div class="big-name">Akshat<br/>Paul</div>
+      </div>
+      <div>
+        <div class="label">Student ID</div>
+        <div class="id-badge">12306541</div>
+      </div>
+      <div class="version-badge">Version 1.0 → STABLE</div>
+    </div>
+
+    <!-- JOKE SECTION HEADER -->
+    <div class="section-header">
+      <h2>📢 Joke Dispatch Board</h2>
+      <div class="pill">LIVE</div>
+      <span style="font-size:0.75rem; opacity:0.5; margin-left:auto;">click a card for a laugh</span>
+    </div>
+
+    <!-- JOKE CARDS -->
+    <div class="joke-card" onclick="wiggle(this)">
+      <div class="joke-num">01</div>
+      <div class="joke-setup">Programming</div>
+      <div class="joke-text">Why do programmers prefer dark mode?</div>
+      <div class="joke-punchline">Because light attracts bugs. 🐛</div>
+      <span class="joke-emoji">💻</span>
+    </div>
+
+    <div class="joke-card" onclick="wiggle(this)">
+      <div class="joke-num">02</div>
+      <div class="joke-setup">DevOps Wisdom</div>
+      <div class="joke-text">A QA engineer walks into a bar and orders 1 beer. Orders 0 beers. Orders 99999 beers. Orders -1 beers. Orders a lizard.</div>
+      <div class="joke-punchline">First real customer walks in and asks where the bathroom is. The bar bursts into flames. 🔥</div>
+      <span class="joke-emoji">🍺</span>
+    </div>
+
+    <div class="joke-card" onclick="wiggle(this)">
+      <div class="joke-num">03</div>
+      <div class="joke-setup">Career Goals</div>
+      <div class="joke-text">My code never has bugs.</div>
+      <div class="joke-punchline">It has random features that appear without warning. ✨</div>
+      <span class="joke-emoji">🎲</span>
+    </div>
+
+    <div class="joke-card" onclick="wiggle(this)">
+      <div class="joke-num">04</div>
+      <div class="joke-setup">Existential CSS</div>
+      <div class="joke-text">CSS stands for "Can't Style Stuff".</div>
+      <div class="joke-punchline">Or "Crying Softly Somewhere." Both are accurate. 😭</div>
+      <span class="joke-emoji">🎨</span>
+    </div>
+
+    <div class="joke-card" onclick="wiggle(this)">
+      <div class="joke-num">05</div>
+      <div class="joke-setup">Git Confessions</div>
+      <div class="joke-text">Me: I'll just make one small change.<br/>Git history: "feat: refactor entire codebase at 3am"</div>
+      <div class="joke-punchline">No description. No commit message. Just chaos. 🌪️</div>
+      <span class="joke-emoji">📦</span>
+    </div>
+
+    <div class="joke-card" onclick="wiggle(this)">
+      <div class="joke-num">06</div>
+      <div class="joke-setup">Self-Healing</div>
+      <div class="joke-text">The fleet heals itself, they said. It'll be fine, they said.</div>
+      <div class="joke-punchline">The fleet has been healing for 6 hours. It found a therapist. 🛸</div>
+      <span class="joke-emoji">🩹</span>
+    </div>
+
+    <!-- RANDOM JOKE GENERATOR -->
+    <div class="generator-section">
+      <h3>⚡ Joke Generator v2.0</h3>
+      <div id="live-joke">Click the button. You won't regret it. (You might regret it.)</div>
+      <button class="btn" onclick="newJoke()">GIMME A JOKE →</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-panel">
+      <h3>Fleet Stats</h3>
+      <div class="stat-row">
+        <span class="stat-label">Uptime</span>
+        <span class="stat-val" id="uptime">100%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Jokes Told</span>
+        <span class="stat-val" id="joke-count">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Bugs Denied</span>
+        <span class="stat-val">∞</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Version</span>
+        <span class="stat-val">1.0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Coffees consumed</span>
+        <span class="stat-val" id="coffees">☕ 47</span>
+      </div>
+    </div>
+
+    <!-- FOOTER MARQUEE -->
+    <div class="footer-marquee">
+      <span class="ticker">
+        ✦ AKSHAT PAUL — STUDENT ID: YOUR_ID_HERE ✦ SELF-HEALING WEB FLEET ✦ VERSION 1.0 ✦ DEPLOYED SUCCESSFULLY ✦ NO ERRORS FOUND (WE STOPPED LOOKING) ✦ AKSHAT PAUL — STUDENT ID: YOUR_ID_HERE ✦ SELF-HEALING WEB FLEET ✦ VERSION 1.0 ✦ DEPLOYED SUCCESSFULLY ✦ NO ERRORS FOUND (WE STOPPED LOOKING) ✦&nbsp;
+      </span>
+    </div>
+
+  </div>
+
+  <script>
+    const jokes = [
+      "Why did the developer go broke? Because he used up all his cache. 💸",
+      "There are 10 types of people in the world: those who understand binary and those who don't.",
+      "A SQL query walks into a bar, walks up to two tables and asks... 'Can I join you?'",
+      "I would tell you a UDP joke but you might not get it.",
+      "Knock knock. Race condition. Who's there?",
+      "Why do Java developers wear glasses? Because they don't C#.",
+      "To understand recursion, you must first understand recursion.",
+      "The best thing about a Boolean is that even if you're wrong, you're only off by a bit.",
+      "How many programmers does it take to change a light bulb? None — that's a hardware problem.",
+      "What's a computer's favorite snack? Microchips. 🍟",
+      "Debugging is like being the detective in a crime movie where you are also the murderer.",
+      "It works on my machine. Shipping my machine.",
+      "99 little bugs in the code, 99 little bugs… take one down, patch it around… 127 little bugs in the code.",
+      "Why did the programmer quit his job? Because he didn't get arrays. (A raise.)",
+      "Some people see a problem and think: use regex. Now they have two problems.",
+      "I named my dog 'Stay'. Now I say 'Come here, Stay'. His mind is blown. (Not programming but chaos is universal.)",
+      "My code passed all tests. I deleted the tests.",
+      "git commit -m 'fixed everything finally' — famous last words.",
+      "Error 404: Motivation not found.",
+      "I told my boss three companies were after me. He asked which ones. I said Netflix, Amazon and Google. He gave me a raise. I don't have the heart to say they were spam calls.",
+    ];
+
+    let jokeCount = 0;
+
+    function newJoke() {
+      const el = document.getElementById('live-joke');
+      el.style.opacity = 0;
+      setTimeout(() => {
+        el.textContent = jokes[Math.floor(Math.random() * jokes.length)];
+        el.style.opacity = 1;
+        jokeCount++;
+        document.getElementById('joke-count').textContent = jokeCount;
+        document.getElementById('coffees').textContent = '☕ ' + (47 + Math.floor(jokeCount / 3));
+      }, 250);
+    }
+
+    function wiggle(el) {
+      el.animate([
+        { transform: 'translate(0,0) rotate(0deg)' },
+        { transform: 'translate(-4px,-4px) rotate(-1deg)' },
+        { transform: 'translate(4px,-4px) rotate(1deg)' },
+        { transform: 'translate(-4px,4px) rotate(-1deg)' },
+        { transform: 'translate(0,0) rotate(0deg)' }
+      ], { duration: 350, easing: 'ease-in-out' });
+    }
+
+    // Animate uptime counter
+    let seconds = 0;
+    setInterval(() => {
+      seconds++;
+      const h = String(Math.floor(seconds / 3600)).padStart(2,'0');
+      const m = String(Math.floor((seconds % 3600) / 60)).padStart(2,'0');
+      const s = String(seconds % 60).padStart(2,'0');
+      document.getElementById('uptime').textContent = `${h}:${m}:${s}`;
+    }, 1000);
+  </script>
 </body>
 </html>
