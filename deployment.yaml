@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: self-healing-deployment
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: self-healing-web
+
+  template:
+    metadata:
+      labels:
+        app: self-healing-web
+
+    spec:
+      containers:
+      - name: self-healing-container
+        image: self-healing-web:v1
+
+        imagePullPolicy: Never
+
+        ports:
+        - containerPort: 80
